@@ -48,7 +48,7 @@ begin
             SetLength(reactor_times, reactor);
           reactor_times[reactor] := time;
         end
-      else
+      else if parts[2] = 'enabled' then
         begin
           time := time - reactor_times[reactor];
 	  if time > max_time then
