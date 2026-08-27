@@ -9,15 +9,16 @@ const
   C_FNAME = '../inputs/1.txt';
 
 var
-  tfIn: TextFile;
+  line_no : Integer = 0;
+  disabled_count : Integer = 0;
+  max_time : Integer = 0;
+  max_disabled_count : Integer = 0;
+  max_disabled_time : Integer = 0;
+  i, reactor, time, disabled_time, time_diff : Integer;
   data : Array of String = ('', '');
-  line_no : integer = 0;
-  i: Integer;
-  reactor : Integer;
+  tfIn: TextFile;
   parts : TStringArray;
   reactor_times : Array of Integer = ();
-  time : Integer;
-  max_time : Integer = 0;
 
 begin
   AssignFile(tfIn, C_FNAME);
@@ -47,14 +48,32 @@ begin
           if Length(reactor_times) < reactor then
             SetLength(reactor_times, reactor);
           reactor_times[reactor] := time;
+
+          disabled_count := disabled_count + 1;
+          disabled_time := time;
         end
       else if parts[2] = 'enabled' then
         begin
-          time := time - reactor_times[reactor];
-	  if time > max_time then
-            max_time := time;
+          time_diff := time - reactor_times[reactor];
+	  if time_diff > max_time then
+            max_time := time_diff;
+
+          if disabled_count > max_disabled_count then
+            begin
+              max_disabled_count := disabled_count;
+              max_disabled_time := time - disabled_time;
+            end
+          else if disabled_count = max_disabled_count then
+            begin
+              time_diff := time - disabled_time;
+              if time_diff > max_disabled_time then
+                max_disabled_time := time_diff
+            end;
+
+          disabled_count := disabled_count - 1;
         end;
   end;
 
   writeln(max_time);
+  writeln(max_disabled_time);
 end.
