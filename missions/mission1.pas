@@ -10,7 +10,8 @@ const
 
 var
   tfIn: TextFile;
-  data : Array of String = ();
+  data : Array of String = ('', '');
+  line_no : integer = 0;
   i: Integer;
   reactor : Integer;
   parts : TStringArray;
@@ -24,9 +25,10 @@ begin
     reset(tfIn);
     while not eof(tfIn) do
     begin
-      // TODO - grow more efficiently
-      SetLength(data, Length(data) + 1);
-      Readln(tfIn, data[High(data)]);
+      if Length(data) < line_no + 1 then
+        SetLength(data, Length(data) * 2);
+      Readln(tfIn, data[line_no]);
+      line_no := line_no + 1;
     end;
     CloseFile(tfIn);
   except
@@ -34,7 +36,7 @@ begin
      writeln('File handling error occurred. Details: ', E.Message);
   end;
 
-  for i := 0 to Length(data) - 1 do
+  for i := 0 to line_no - 1 do
   begin
       parts := SplitString(data[i], ' ');
       time := StrToInt(copy(parts[0], 3));
