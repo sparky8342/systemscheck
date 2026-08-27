@@ -54,7 +54,6 @@ begin
 	  if time > max_time then
             max_time := time;
         end;
-
   end;
 
   writeln(max_time);
