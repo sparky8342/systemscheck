@@ -5,39 +5,46 @@ program Mission1;
 uses
   SysUtils, StrUtils;
 
+function getinput : TStringArray;
 const
   C_FNAME = '../inputs/1.txt';
+var
+  tfIn: TextFile;
+  line_no : Integer = 0;
+begin
+  AssignFile(tfIn, C_FNAME);
+  result := TStringArray.Create;
+  SetLength(result, 1);
+  try
+    reset(tfIn);
+    while not eof(tfIn) do
+    begin
+      if Length(result) < line_no + 1 then
+        SetLength(result, Length(result) * 2);
+      Readln(tfIn, result[line_no]);
+      line_no := line_no + 1;
+    end;
+    CloseFile(tfIn);
+    SetLength(result, line_no);
+  except
+    on E: EInOutError do
+     writeln('File handling error occurred. Details: ', E.Message);
+  end;
+end;
 
 var
-  line_no : Integer = 0;
   disabled_count : Integer = 0;
   max_time : Integer = 0;
   max_disabled_count : Integer = 0;
   max_disabled_time : Integer = 0;
   i, reactor, time, disabled_time, time_diff : Integer;
-  data : Array of String = ('', '');
-  tfIn: TextFile;
+  data : TStringArray = ('');
   parts : TStringArray;
   reactor_times : Array of Integer = ();
 
 begin
-  AssignFile(tfIn, C_FNAME);
-  try
-    reset(tfIn);
-    while not eof(tfIn) do
-    begin
-      if Length(data) < line_no + 1 then
-        SetLength(data, Length(data) * 2);
-      Readln(tfIn, data[line_no]);
-      line_no := line_no + 1;
-    end;
-    CloseFile(tfIn);
-  except
-    on E: EInOutError do
-     writeln('File handling error occurred. Details: ', E.Message);
-  end;
-
-  for i := 0 to line_no - 1 do
+  data := getinput();
+  for i := 0 to Length(data) - 1 do
   begin
       parts := SplitString(data[i], ' ');
       time := StrToInt(copy(parts[0], 3));
@@ -72,7 +79,7 @@ begin
 
           disabled_count := disabled_count - 1;
         end;
-  end;
+    end;
 
   writeln(max_time);
   writeln(max_disabled_time);
