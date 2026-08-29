@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Data::Dumper;
+use Heap::PQ 'import';
 
 my @dirs = ([0, 1], [0, -1], [1, 0], [-1, 0]);
 my ($width, $height);
@@ -69,10 +69,14 @@ sub djikstra {
 	}
 	$distances[0][0] = 0;
 
-	my @queue = ([0, 0, 0]);
+	my $heap = Heap::PQ::new('min', sub {
+		$a->[2] <=> $b->[2]
+	});
 
-	while (@queue) {
-		my $pos = shift @queue;
+	heap_push($heap, [0, 0, 0]);
+
+	while (heap_size($heap)) {
+		my $pos = heap_pop($heap);
 
 		if ($pos->[0] == $width - 1 && $pos->[1] == $height - 1) {
 			return $pos->[2];
@@ -94,12 +98,9 @@ sub djikstra {
 			}
 			if ($distances[$new_x][$new_y] > $new_dist) {
 				$distances[$new_x][$new_y] = $new_dist;
-				push @queue, [$new_x, $new_y, $new_dist];
+				heap_push($heap, [$new_x, $new_y, $new_dist]);
 			}
 		}
-
-		# poor mans heap
-		@queue = sort { $a->[2] <=> $b->[2] } @queue;
 	}
 }
 
