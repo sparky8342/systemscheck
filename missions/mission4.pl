@@ -9,6 +9,7 @@ close $fh;
 chomp($_) foreach @data;
 
 my $sum = 0;
+my %commands;
 foreach my $line (@data) {
 	$line =~ /^(.*?)(\d+)$/;
 	my ($message, $checksum) = ($1, $2);
@@ -18,6 +19,12 @@ foreach my $line (@data) {
 	}
 	if ($cksum != $checksum) {
 		$sum += $checksum;
+		($message) = $message =~ /\|(.*)\|/;
+		while ($message =~ /(\w{2})/g) {
+			$commands{$1}++;
+		}
 	}
 }	
-printf("%d\n", $sum);
+my @frequency = sort { $b <=> $a } values %commands;
+
+printf("%d\n%d\n", $sum, $frequency[0] * $frequency[1]);
