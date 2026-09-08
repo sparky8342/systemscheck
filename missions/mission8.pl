@@ -2,9 +2,10 @@
 use strict;
 use warnings;
 
+use Heap::PQ 'import';
+
 my $fh;
 open $fh, "<", "../inputs/8.txt";
-#open $fh, "<", "example.txt";
 my @data = <$fh>;
 close $fh;
 chomp($_) foreach @data;
@@ -29,10 +30,6 @@ foreach (; $i < @data; $i++) {
 	$nodes{$name}{rubbish} = $rubbish;
 }
 
-#use Data::Dumper;
-#print Dumper \%nodes;
-#exit(0);
-
 foreach my $name (keys %nodes) {
 	$nodes{$nodes{$name}{to}}{chute} = 0;
 }	
@@ -52,20 +49,17 @@ foreach my $name (keys %nodes) {
 @times = sort { $a <=> $b } @times;
 printf("%d\n", $times[0]);
 
-my @droids;
+my $heap = Heap::PQ->new('min', sub {
+	$a->{time} <=> $b->{time} || $a->{location} cmp $b->{location}
+});
 foreach my $name (keys %nodes) {
 	if ($nodes{$name}{chute}) {
-		push @droids, { location => $name , time => 0, total_time => 0 };
+		heap_push($heap, { location => $name , time => 0, total_time => 0 });
 	}
 }
 
 while (1) {
-	@droids = sort {
-		$a->{time} <=> $b->{time}
-		|| $a->{location} cmp $b->{location}
-	} @droids;
-
-	my $droid = $droids[0];
+	my $droid = heap_pop($heap);
 
 	if ($droid->{location} eq 'inc') {
 		printf("%d\n", $droid->{total_time});
@@ -73,26 +67,26 @@ while (1) {
 	}
 
 	if ($nodes{$droid->{location}}->{rubbish} > 0) {
-		my $time = $droid->{time};
-		my $location = $droid->{location};
-		my $amount = 1;
-		my $id = 1;
-		while ($droids[$id]->{time} == $time
-			&& $droids[$id]->{location} eq $location) {
-			$id++;
+		my @droids = ($droid);
+		while (1) {
+			my $next_droid = heap_peek($heap);
+			if ($next_droid->{time} == $droid->{time} && $next_droid->{location} eq $droid->{location}) {
+				push @droids, heap_pop($heap);
+			} else {
+				last;
+			}
 		}
-		for (my $i = 0; $i < $id; $i++) {
-			my $droid = shift @droids;
-			$droid->{time} += $nodes{$location}->{rubbish};
-			$droid->{total_time} += $nodes{$location}->{rubbish};
+		foreach my $droid (@droids) {
+			my $time = $nodes{$droid->{location}}->{rubbish};
+			$droid->{time} += $time;
+			$droid->{total_time} += $time;
+			heap_push($heap, $droid);
 		}
-		$nodes{$location}->{rubbish} = 0;
-		next;
+		$nodes{$droid->{location}}->{rubbish} = 0;
+	} else {
+		$droid->{time} = $nodes{$droid->{location}}{distance} + $droid->{time};
+		$droid->{total_time} += $nodes{$droid->{location}}{distance};
+		$droid->{location} = $nodes{$droid->{location}}{to};
+		heap_push($heap, $droid);
 	}
-
-	$droid = shift @droids;
-	$droid->{time} = $nodes{$droid->{location}}{distance} + $droid->{time};
-	$droid->{total_time} += $nodes{$droid->{location}}{distance};
-	$droid->{location} = $nodes{$droid->{location}}{to};
-	push @droids, $droid;
 }
