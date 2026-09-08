@@ -2,28 +2,27 @@
 use strict;
 use warnings;
 
+use List::Util qw(min);
 use Heap::PQ 'import';
 
-my $fh;
+my ($fh, $data);
 open $fh, "<", "../inputs/8.txt";
-my @data = <$fh>;
+{
+	local $/;
+	$data = <$fh>;
+}
 close $fh;
-chomp($_) foreach @data;
 
+my @parts = split/\n\n/, $data;
 my %nodes;
-my $i;
-foreach ($i = 0; $i < @data; $i++) {
-	my $line = $data[$i];
-	if ($line eq '') {
-		last;
-	}
+my %chutes;
+foreach my $line (split/\n/, $parts[0]) {
 	$line =~ /^(\w{3})-\[(\d+)\]\>(\w{3})$/;
 	my ($from, $distance, $to) = ($1, $2, $3);
-	$nodes{$from} = { distance => $distance, to => $to, chute => 1 };
+	$nodes{$from} = { distance => $distance, to => $to };
+	$chutes{$from} = undef;
 }
-$i++;
-foreach (; $i < @data; $i++) {
-	my $line = $data[$i];
+foreach my $line (split/\n/, $parts[1]) {
 	$line =~ /^(\w{3})\s(\d+)$/;
 	my ($name, $rubbish) = ($1, $2);
 	next if $name eq 'inc';
@@ -31,31 +30,26 @@ foreach (; $i < @data; $i++) {
 }
 
 foreach my $name (keys %nodes) {
-	$nodes{$nodes{$name}{to}}{chute} = 0;
+	delete($chutes{$nodes{$name}{to}});
 }	
 
-my @times;
-foreach my $name (keys %nodes) {
-	if ($nodes{$name}{chute}) {
-		my $time = 0;
-		while ($name ne 'inc') {
-			$time += $nodes{$name}{distance};
-			$name = $nodes{$name}{to};
-		}
-		push @times, $time;
+my $best_time = 999999;
+foreach my $name (keys %chutes) {
+	my $time = 0;
+	while ($name ne 'inc') {
+		$time += $nodes{$name}{distance};
+		$name = $nodes{$name}{to};
 	}
+	$best_time = min($best_time, $time);
 }
 
-@times = sort { $a <=> $b } @times;
-printf("%d\n", $times[0]);
+printf("%d\n", $best_time);
 
 my $heap = Heap::PQ->new('min', sub {
 	$a->{time} <=> $b->{time} || $a->{location} cmp $b->{location}
 });
-foreach my $name (keys %nodes) {
-	if ($nodes{$name}{chute}) {
-		heap_push($heap, { location => $name , time => 0, total_time => 0 });
-	}
+foreach my $name (keys %chutes) {
+	heap_push($heap, { location => $name , time => 0, total_time => 0 });
 }
 
 while (1) {
@@ -76,16 +70,17 @@ while (1) {
 				last;
 			}
 		}
+		my $time = $nodes{$droid->{location}}->{rubbish};
 		foreach my $droid (@droids) {
-			my $time = $nodes{$droid->{location}}->{rubbish};
 			$droid->{time} += $time;
 			$droid->{total_time} += $time;
 			heap_push($heap, $droid);
 		}
 		$nodes{$droid->{location}}->{rubbish} = 0;
 	} else {
-		$droid->{time} = $nodes{$droid->{location}}{distance} + $droid->{time};
-		$droid->{total_time} += $nodes{$droid->{location}}{distance};
+		my $distance = $nodes{$droid->{location}}{distance};
+		$droid->{time} += $distance;
+		$droid->{total_time} += $distance;
 		$droid->{location} = $nodes{$droid->{location}}{to};
 		heap_push($heap, $droid);
 	}
