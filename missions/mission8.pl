@@ -61,21 +61,25 @@ while (1) {
 	}
 
 	if ($nodes{$droid->{location}}->{rubbish} > 0) {
-		my @droids = ($droid);
+		my ($time, $location) = ($droid->{time}, $droid->{location});
+		my $added_time = $nodes{$droid->{location}}->{rubbish};
+
+		$droid->{time} += $added_time;
+		$droid->{total_time} += $added_time;
+		heap_push($heap, $droid);
+
 		while (1) {
 			my $next_droid = heap_peek($heap);
-			if ($next_droid->{time} == $droid->{time} && $next_droid->{location} eq $droid->{location}) {
-				push @droids, heap_pop($heap);
+			if ($next_droid->{time} == $time && $next_droid->{location} eq $location) {
+				my $droid = heap_pop($heap);
+				$droid->{time} += $added_time;
+				$droid->{total_time} += $added_time;
+				heap_push($heap, $droid);
 			} else {
 				last;
 			}
 		}
-		my $time = $nodes{$droid->{location}}->{rubbish};
-		foreach my $droid (@droids) {
-			$droid->{time} += $time;
-			$droid->{total_time} += $time;
-			heap_push($heap, $droid);
-		}
+
 		$nodes{$droid->{location}}->{rubbish} = 0;
 	} else {
 		my $distance = $nodes{$droid->{location}}{distance};
