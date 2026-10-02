@@ -104,7 +104,6 @@ sub count_paths {
 	return dfs($relays, $start, $visited, $cache);
 }
 
-
 sub sort_neighbours {
 	my ($neighbours, $relays) = @_;
 	@$neighbours = sort {
@@ -112,22 +111,19 @@ sub sort_neighbours {
 	} @$neighbours;
 	return $neighbours;
 }
-			
 
 sub send_message {
 	my ($relays) = @_;
 
-	my $move = 1;
-
-	while ($move) {	
-		$move = 0;
-
+	outer:
+	while (1) {
 		for (my $i = 0; $i < @$relays - 1; $i++) {
 			my $relay = $relays->[$i];
 
 			if ($relay->buffer_len() > 0) {
 				my $neighbours = sort_neighbours($relay->get_neighbours(), $relays);
 							
+				my $move = 0;
 				my $chunk_id = 0;
 				my $n_id = 0;
 				while ($chunk_id < $relay->buffer_len()) {
@@ -141,8 +137,8 @@ sub send_message {
 						if (!$neighbour_relay->seen_chunk($chunk)) {
 							$relay->remove_chunk($chunk_id);
 							$neighbour_relay->add_to_buffer($chunk);
-							$sent = 1;
 							$move = 1;
+							$sent = 1;
 							$n_id = ($j + 1) % @$neighbours;
 							last;
 						}
@@ -151,13 +147,15 @@ sub send_message {
 						$chunk_id++;
 					}
 				}
+				if ($move) {
+					next outer;
+				}
 			}
 		}
+		last;
 	}
 
 	printf("%d\n", $relays->[@$relays - 1]->get_validation());
-
-	#13328 wrong
 }
 
 
