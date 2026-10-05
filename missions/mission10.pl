@@ -22,6 +22,27 @@ sub travel_time {
 	return abs($x1 - $x2) + abs($y1 - $y2);
 }
 
+sub parse_data {
+	my ($data) = @_;
+	my @job_data = split/\n\n/, $data;
+	my @jobs;
+	foreach my $data (@job_data) {
+		my @operation_data = split/\n/, $data;
+		my $id = substr($operation_data[0], 1);
+		shift @operation_data;
+		my @operations;
+		foreach my $line (@operation_data) {
+			my (undef, $machine, $tool, $time) = split/\s/, $line;
+			$machine = substr($machine, 1);
+			$tool = substr($tool, 1);
+			$time = substr($time, 1);
+			push @operations, { machine => $machine, tool => $tool, time => $time };
+		}
+		push @jobs, { id => $id, operations => \@operations };
+	}
+	return \@jobs;
+}
+
 my ($fh, $data);
 open $fh, "<", "../inputs/10.txt";
 #open $fh, "<", "example.txt";
@@ -31,24 +52,18 @@ open $fh, "<", "../inputs/10.txt";
 }
 close $fh;
 
-my @jobs = split/\n\n/, $data;
+my $jobs = parse_data($data);
 
 my $total_time = 0;
-foreach my $job (@jobs) {
-	my @operations = split/\n/, $job;
-	shift @operations;
-
+foreach my $job (@$jobs) {
 	my $location = 0;
-	foreach my $operation (@operations) {
-		my (undef, $machine, undef, $time) = split/\s/, $operation;
-		$machine = substr($machine, 1);
-		$time = substr($time, 1);
-		my $part_time = travel_time($location, $machine);
-		my $tool_time = travel_time(0, $machine);
+	foreach my $operation (@{$job->{operations}}) {
+		my $part_time = travel_time($location, $operation->{machine});
+		my $tool_time = travel_time(0, $operation->{machine});
 		my $travel_time = max($part_time, $tool_time);
 		$total_time += $travel_time;
-		$location = $machine;
-		$total_time += $time;
+		$location = $operation->{machine};
+		$total_time += $operation->{time};
 	}
 
 	$total_time += travel_time($location, 0);
