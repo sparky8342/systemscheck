@@ -30,7 +30,7 @@ int bfs(char grid[height][width]) {
     visited[0][0] = true;
 
     while (cvector_size(queue) > 0) {
-	POS *pos = queue[0];
+        POS *pos = queue[0];
         cvector_erase(queue, 0);
 
         if (pos->x == width - 1 && pos->y == height - 1) {
@@ -41,7 +41,8 @@ int bfs(char grid[height][width]) {
         for (int i = 0; i < 8; i += 2) {
             int next_x = pos->x + dirs[i];
             int next_y = pos->y + dirs[i + 1];
-            if (next_x < 0 || next_x == width || next_y < 0 || next_y == height) {
+            if (next_x < 0 || next_x == width || next_y < 0 ||
+                next_y == height) {
                 continue;
             }
             if (grid[next_y][next_x] == '#') {
@@ -53,11 +54,11 @@ int bfs(char grid[height][width]) {
 
             POS *next = (POS *)malloc(sizeof(POS));
             next->x = next_x;
-	    next->y = next_y;
-	    next->steps = pos->steps + 1;
-	    cvector_push_back(queue, next);
+            next->y = next_y;
+            next->steps = pos->steps + 1;
+            cvector_push_back(queue, next);
             visited[next->y][next->x] = true;
-	}
+        }
     }
 
     cvector_free(queue);
