@@ -1,12 +1,44 @@
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "./utils/cvector.h"
+#include <string.h>
 
 typedef struct {
     int x;
     int y;
     int steps;
 } POS;
+
+typedef struct {
+    POS **data;
+    int start;
+    int capacity;
+    int next;
+} Queue;
+
+Queue *queue_new() {
+    Queue *q = malloc(sizeof(Queue *));
+    q->data = malloc(sizeof(POS *));
+    q->start = 0;
+    q->next = 0;
+    q->capacity = 1;
+    return q;
+}
+
+void queue_insert(Queue *queue, POS *pos) {
+    if (queue->capacity == queue->next) {
+        queue->capacity *= 2;
+        queue->data = realloc(queue->data, sizeof(POS *) * queue->capacity);
+    }
+    queue->data[queue->next] = pos;
+    queue->next++;
+}
+
+POS *queue_pop(Queue *queue) {
+    // non memory freeing pop from front
+    queue->start++;
+    return queue->data[queue->start - 1];
+}
 
 typedef struct {
     POS **data;
@@ -98,21 +130,23 @@ int bfs(char grid[height][width]) {
         }
     }
 
-    POS **queue = NULL;
+    Queue *queue = queue_new();
     POS *start = (POS *)malloc(sizeof(POS));
     start->x = 0;
     start->y = 0;
     start->steps = 0;
-    cvector_push_back(queue, start);
+    queue_insert(queue, start);
     visited[0][0] = true;
 
-    while (cvector_size(queue) > 0) {
-        POS *pos = queue[0];
-        cvector_erase(queue, 0);
+    while (queue->next > -1) {
+        POS *pos = queue_pop(queue);
 
         if (pos->x == width - 1 && pos->y == height - 1) {
-            cvector_free(queue);
-            return pos->steps;
+            int steps = pos->steps;
+            free(pos);
+            free(queue->data);
+            free(queue);
+            return steps;
         }
 
         for (int i = 0; i < 8; i += 2) {
@@ -132,12 +166,11 @@ int bfs(char grid[height][width]) {
             next->x = next_x;
             next->y = next_y;
             next->steps = pos->steps + 1;
-            cvector_push_back(queue, next);
+            queue_insert(queue, next);
             visited[next->y][next->x] = true;
         }
     }
 
-    cvector_free(queue);
     return -1;
 }
 
@@ -176,11 +209,12 @@ int djikstra(char grid[height][width]) {
     start->steps = 0;
     heap_insert(heap, start);
 
-    while (heap->next > 0) {
+    while (heap->next > -1) {
         POS *pos = heap_pop(heap);
 
         if (pos->x == width - 1 && pos->y == height - 1) {
             free(pos);
+            free(heap->data);
             free(heap);
             return distances[height - 1][width - 1];
         }
