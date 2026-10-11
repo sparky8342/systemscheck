@@ -143,7 +143,6 @@ int bfs(char grid[height][width]) {
 
         if (pos->x == width - 1 && pos->y == height - 1) {
             int steps = pos->steps;
-            free(pos);
             free(queue->data);
             free(queue);
             return steps;
@@ -242,6 +241,8 @@ int djikstra(char grid[height][width]) {
                 heap_insert(heap, new_pos);
             }
         }
+
+        free(pos);
     }
 }
 
