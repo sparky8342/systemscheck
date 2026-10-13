@@ -7,10 +7,10 @@ typedef struct {
     int x;
     int y;
     int steps;
-} POS;
+} Pos;
 
 typedef struct {
-    POS **data;
+    Pos **data;
     int start;
     int capacity;
     int next;
@@ -18,30 +18,31 @@ typedef struct {
 
 Queue *queue_new() {
     Queue *q = malloc(sizeof(Queue *));
-    q->data = malloc(sizeof(POS *));
-    q->start = 0;
+    q->data = malloc(sizeof(Pos *));
     q->next = 0;
     q->capacity = 1;
     return q;
 }
 
-void queue_insert(Queue *queue, POS *pos) {
+void queue_insert(Queue *queue, Pos *pos) {
     if (queue->capacity == queue->next) {
         queue->capacity *= 2;
-        queue->data = realloc(queue->data, sizeof(POS *) * queue->capacity);
+        queue->data = realloc(queue->data, sizeof(Pos *) * queue->capacity);
     }
     queue->data[queue->next] = pos;
     queue->next++;
 }
 
-POS *queue_pop(Queue *queue) {
-    // non memory freeing pop from front
-    queue->start++;
-    return queue->data[queue->start - 1];
+Pos *queue_pop(Queue *queue) {
+    Pos *pos = queue->data[0];
+    memmove(&queue->data[0], &queue->data[1],
+            (queue->capacity - 1) * sizeof(Pos *));
+    queue->next--;
+    return pos;
 }
 
 typedef struct {
-    POS **data;
+    Pos **data;
     int capacity;
     int next;
 } Heap;
@@ -58,16 +59,16 @@ int heap_right(int i) {
 
 Heap *heap_new() {
     Heap *h = malloc(sizeof(Heap *));
-    h->data = malloc(sizeof(POS *));
+    h->data = malloc(sizeof(Pos *));
     h->next = 0;
     h->capacity = 1;
     return h;
 }
 
-void heap_insert(Heap *heap, POS *pos) {
+void heap_insert(Heap *heap, Pos *pos) {
     if (heap->capacity == heap->next) {
         heap->capacity *= 2;
-        heap->data = realloc(heap->data, sizeof(POS *) * heap->capacity);
+        heap->data = realloc(heap->data, sizeof(Pos *) * heap->capacity);
     }
     heap->data[heap->next] = pos;
 
@@ -75,7 +76,7 @@ void heap_insert(Heap *heap, POS *pos) {
     while (i != 0) {
         int parent = heap_parent(i);
         if (heap->data[parent]->steps > heap->data[i]->steps) {
-            POS *tmp = heap->data[parent];
+            Pos *tmp = heap->data[parent];
             heap->data[parent] = heap->data[i];
             heap->data[i] = tmp;
             i = parent;
@@ -98,15 +99,15 @@ void min_heapify(Heap *heap, int i) {
         smallest = r;
     }
     if (smallest != i) {
-        POS *tmp = heap->data[i];
+        Pos *tmp = heap->data[i];
         heap->data[i] = heap->data[smallest];
         heap->data[smallest] = tmp;
         min_heapify(heap, smallest);
     }
 }
 
-POS *heap_pop(Heap *heap) {
-    POS *min = heap->data[0];
+Pos *heap_pop(Heap *heap) {
+    Pos *min = heap->data[0];
     heap->data[0] = heap->data[heap->next - 1];
     heap->next--;
     min_heapify(heap, 0);
@@ -131,7 +132,7 @@ int bfs(char grid[height][width]) {
     }
 
     Queue *queue = queue_new();
-    POS *start = (POS *)malloc(sizeof(POS));
+    Pos *start = (Pos *)malloc(sizeof(Pos));
     start->x = 0;
     start->y = 0;
     start->steps = 0;
@@ -139,7 +140,7 @@ int bfs(char grid[height][width]) {
     visited[0][0] = true;
 
     while (queue->next > -1) {
-        POS *pos = queue_pop(queue);
+        Pos *pos = queue_pop(queue);
 
         if (pos->x == width - 1 && pos->y == height - 1) {
             int steps = pos->steps;
@@ -161,7 +162,7 @@ int bfs(char grid[height][width]) {
                 continue;
             }
 
-            POS *next = (POS *)malloc(sizeof(POS));
+            Pos *next = (Pos *)malloc(sizeof(Pos));
             next->x = next_x;
             next->y = next_y;
             next->steps = pos->steps + 1;
@@ -202,14 +203,14 @@ int djikstra(char grid[height][width]) {
     distances[0][0] = 0;
 
     Heap *heap = heap_new();
-    POS *start = (POS *)malloc(sizeof(POS));
+    Pos *start = (Pos *)malloc(sizeof(Pos));
     start->x = 0;
     start->y = 0;
     start->steps = 0;
     heap_insert(heap, start);
 
     while (heap->next > -1) {
-        POS *pos = heap_pop(heap);
+        Pos *pos = heap_pop(heap);
 
         if (pos->x == width - 1 && pos->y == height - 1) {
             free(pos);
@@ -234,7 +235,7 @@ int djikstra(char grid[height][width]) {
             }
             if (distances[new_y][new_x] > new_steps) {
                 distances[new_y][new_x] = new_steps;
-                POS *new_pos = (POS *)malloc(sizeof(POS));
+                Pos *new_pos = (Pos *)malloc(sizeof(Pos));
                 new_pos->x = new_x;
                 new_pos->y = new_y;
                 new_pos->steps = new_steps;
