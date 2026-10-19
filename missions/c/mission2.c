@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "./utils/queue.c"
 
 typedef struct {
     int x;
@@ -13,31 +14,31 @@ typedef struct {
     Pos **data;
     int start;
     int capacity;
-    int next;
+    int size;
 } Queue;
 
 Queue *queue_new() {
     Queue *q = malloc(sizeof(Queue *));
     q->data = malloc(sizeof(Pos *));
-    q->next = 0;
+    q->size = 0;
     q->capacity = 1;
     return q;
 }
 
 void queue_insert(Queue *queue, Pos *pos) {
-    if (queue->capacity == queue->next) {
+    if (queue->capacity == queue->size) {
         queue->capacity *= 2;
         queue->data = realloc(queue->data, sizeof(Pos *) * queue->capacity);
     }
-    queue->data[queue->next] = pos;
-    queue->next++;
+    queue->data[queue->size] = pos;
+    queue->size++;
 }
 
 Pos *queue_pop(Queue *queue) {
     Pos *pos = queue->data[0];
     memmove(&queue->data[0], &queue->data[1],
             (queue->capacity - 1) * sizeof(Pos *));
-    queue->next--;
+    queue->size--;
     return pos;
 }
 
@@ -139,7 +140,7 @@ int bfs(char grid[height][width]) {
     queue_insert(queue, start);
     visited[0][0] = true;
 
-    while (queue->next > -1) {
+    while (queue->size > 0) {
         Pos *pos = queue_pop(queue);
 
         if (pos->x == width - 1 && pos->y == height - 1) {
