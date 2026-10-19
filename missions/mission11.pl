@@ -2,6 +2,32 @@
 use strict;
 use warnings;
 
+my %cache;
+
+sub decode {
+	my ($bytes, $start, $len, $decodeFE) = @_;
+	if (exists($cache{$start, $len})) {
+		return $cache{$start, $len};
+	}
+
+	my $add = 0;
+
+	for (my $i = $start; $i < $start + $len; $i++) {
+		if ($bytes->[$i] eq 'FF') {
+			$add += hex($bytes->[$i+2]);
+			$i += 2;
+		} elsif ($bytes->[$i] eq 'FE' && $decodeFE) {
+			$add += decode($bytes, $i - hex($bytes->[$i+1]), hex($bytes->[$i+2]), 1);
+			$i += 2;
+		} else {
+			$add++;
+		}
+	}
+
+	$cache{$start, $len} = $add;
+	return $add;
+}
+
 my $fh;
 open $fh, "<", "../inputs/11.txt";
 my $data = <$fh>;
@@ -10,19 +36,9 @@ chomp($data);
 
 my @bytes = split/ /, $data;
 
-my @output;
+my $output_len = decode(\@bytes, 0, scalar @bytes, 0);
+printf("%d\n", $output_len);
 
-for (my $i = 0; $i < @bytes; $i++) {
-	if ($bytes[$i] eq 'FF') {
-		my $countback = hex($bytes[$i+1]);
-		my $copy = hex($bytes[$i+2]);
-		my $start = @output - $countback;
-		my $end = $start + $copy - 1;
-		push @output, @output[$start..$end];
-		$i += 2;
-	} else {
-		push @output, $bytes[$i];
-	}
-}
-
-printf("%d\n", scalar @output);
+%cache = ();
+$output_len = decode(\@bytes, 0, scalar @bytes, 1);
+printf("%d\n", $output_len);
