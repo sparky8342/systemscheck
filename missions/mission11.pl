@@ -2,12 +2,20 @@
 use strict;
 use warnings;
 
-my %cache;
-
 sub decode {
-	my ($bytes, $start, $len, $decodeFE) = @_;
-	if (exists($cache{$start, $len})) {
-		return $cache{$start, $len};
+	my ($bytes) = @_;
+	return _decode($bytes, 0, scalar @$bytes, 0, {});
+}
+
+sub decodeFE {
+	my ($bytes) = @_;
+	return _decode($bytes, 0, scalar @$bytes, 1, {});
+}
+
+sub _decode {
+	my ($bytes, $start, $len, $decodeFE, $cache) = @_;
+	if (exists($cache->{$start, $len})) {
+		return $cache->{$start, $len};
 	}
 
 	my $add = 0;
@@ -17,14 +25,14 @@ sub decode {
 			$add += hex($bytes->[$i+2]);
 			$i += 2;
 		} elsif ($bytes->[$i] eq 'FE' && $decodeFE) {
-			$add += decode($bytes, $i - hex($bytes->[$i+1]), hex($bytes->[$i+2]), 1);
+			$add += _decode($bytes, $i - hex($bytes->[$i+1]), hex($bytes->[$i+2]), 1, $cache);
 			$i += 2;
 		} else {
 			$add++;
 		}
 	}
 
-	$cache{$start, $len} = $add;
+	$cache->{$start, $len} = $add;
 	return $add;
 }
 
@@ -34,11 +42,5 @@ my $data = <$fh>;
 close $fh;
 chomp($data);
 
-my @bytes = split/ /, $data;
-
-my $output_len = decode(\@bytes, 0, scalar @bytes, 0);
-printf("%d\n", $output_len);
-
-%cache = ();
-$output_len = decode(\@bytes, 0, scalar @bytes, 1);
-printf("%d\n", $output_len);
+my $bytes = [split/ /, $data];
+printf("%d\n%d\n", decode($bytes), decodeFE($bytes));
