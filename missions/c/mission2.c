@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "./utils/queue.c"
 
 typedef struct {
     int x;
