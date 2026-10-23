@@ -11,7 +11,6 @@ typedef struct {
 
 typedef struct {
     Pos **data;
-    int start;
     int capacity;
     int size;
 } Queue;
