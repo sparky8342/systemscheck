@@ -26,6 +26,16 @@ sub neighbours {
 	];
 }
 
+sub next_to_wall {
+	my ($space, $spaces) = @_;
+	foreach my $neighbour (@{neighbours($space)}) {
+		if (!exists($spaces->{hash_key($neighbour)})) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 my $fh;
 open $fh, "<", "../inputs/12.txt";
 #open $fh, "<", "example.txt";
@@ -65,6 +75,10 @@ my $most_steps = 0;
 
 foreach my $space_key (keys %spaces) {
 	my $space = unpack_key($space_key);
+	if (!next_to_wall($space, \%spaces)) {
+		next;
+	}
+
 	$space->{steps} = 0;
 	my @queue = ($space);
 	my %visited = ( $space_key => undef );
