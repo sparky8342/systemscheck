@@ -3,6 +3,17 @@ use strict;
 use warnings;
 use List::Util qw(min max);
 
+sub hash_key {
+	my ($pos) = @_;
+	return sprintf("%d_%d_%d", $pos->{x}, $pos->{y}, $pos->{z});
+}
+
+sub unpack_key {
+	my ($k) = @_;
+	my ($x, $y, $z) = split/_/, $k;
+	return { x => $x, y => $y, z => $z };
+}
+
 sub neighbours {
 	my ($pos) = @_;
 	return [
@@ -17,36 +28,61 @@ sub neighbours {
 
 my $fh;
 open $fh, "<", "../inputs/12.txt";
+#open $fh, "<", "example.txt";
 chomp (my $data = <$fh>);
 close $fh;
 
 my %grid;
 foreach my $coords (split/:/, $data) {
 	my ($x, $y, $z) = split/,/, $coords;
-	$grid{$x, $y, $z} = undef;
+	my $pos = { x => $x, y => $y, z => $z };
+	$grid{hash_key($pos)} = undef;
 }
 
 my $start = { x => 0, y => 0, z => 0 };
 my @queue = ($start);
-my %visited;
-$visited{0, 0, 0} = undef;
+my %visited = ( hash_key($start) => undef );
 
-my $space = 0;
+my %spaces;
 
 while (@queue) {
 	my $pos = shift @queue;
-	$space++;
+	$spaces{hash_key($pos)} = undef;
 
 	foreach my $neighbour (@{neighbours($pos)}) {
-		if (exists($grid{$neighbour->{x}, $neighbour->{y}, $neighbour->{z}})) {
-			next;
-		}
-		if (exists($visited{$neighbour->{x}, $neighbour->{y}, $neighbour->{z}})) {
+		my $hk = hash_key($neighbour);
+		if (exists($grid{$hk}) || exists($visited{$hk})) {
 			next;
 		}
 		push @queue, $neighbour;
-		$visited{$neighbour->{x}, $neighbour->{y}, $neighbour->{z}} = undef;
+		$visited{$hk} = undef;
 	}
 }	
 
-printf("%d\n", $space);
+printf("%d\n", scalar %spaces);
+
+my $most_steps = 0;
+
+foreach my $space_key (keys %spaces) {
+	my $space = unpack_key($space_key);
+	$space->{steps} = 0;
+	my @queue = ($space);
+	my %visited = ( $space_key => undef );
+
+	while (@queue) {
+		my $pos = shift @queue;
+		$most_steps = max($most_steps, $pos->{steps});
+
+		foreach my $neighbour (@{neighbours($pos)}) {
+			my $hk = hash_key($neighbour);
+			if (!exists($spaces{$hk}) || exists($visited{$hk})) {
+				next;
+			}
+			$neighbour->{steps} = $pos->{steps} + 1;
+			push @queue, $neighbour;
+			$visited{$hk} = undef;
+		}
+	}
+}
+
+printf("%d\n", $most_steps);
