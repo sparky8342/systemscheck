@@ -26,19 +26,8 @@ sub neighbours {
 	];
 }
 
-sub next_to_wall {
-	my ($space, $spaces) = @_;
-	foreach my $neighbour (@{neighbours($space)}) {
-		if (!exists($spaces->{hash_key($neighbour)})) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 my $fh;
 open $fh, "<", "../inputs/12.txt";
-#open $fh, "<", "example.txt";
 chomp (my $data = <$fh>);
 close $fh;
 
@@ -71,21 +60,23 @@ while (@queue) {
 
 printf("%d\n", scalar %spaces);
 
+
+# TODO use something better for parts 2 and 3
 my $most_steps = 0;
+my $least_steps = 999999;
 
 foreach my $space_key (keys %spaces) {
 	my $space = unpack_key($space_key);
-	if (!next_to_wall($space, \%spaces)) {
-		next;
-	}
 
 	$space->{steps} = 0;
 	my @queue = ($space);
 	my %visited = ( $space_key => undef );
 
+	my $end;
 	while (@queue) {
 		my $pos = shift @queue;
 		$most_steps = max($most_steps, $pos->{steps});
+		$end = $pos;
 
 		foreach my $neighbour (@{neighbours($pos)}) {
 			my $hk = hash_key($neighbour);
@@ -97,6 +88,8 @@ foreach my $space_key (keys %spaces) {
 			$visited{$hk} = undef;
 		}
 	}
+
+	$least_steps = min($least_steps, $end->{steps});
 }
 
-printf("%d\n", $most_steps);
+printf("%d\n%d\n", $most_steps, $least_steps);
