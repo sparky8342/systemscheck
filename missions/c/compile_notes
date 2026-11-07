@@ -1,0 +1,2 @@
+# compile when using ht.c:
+gcc -o mission4 mission4.c ./utils/ht.c
